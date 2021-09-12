@@ -1,4 +1,4 @@
-crawler/__pycache__/
+crawler/joongang/__pycache__/
+crawler/joongang/joongang.ipynb
+crawler/joongang/__pycache__/log
 data/
-log
-joongang.ipynb

@@ -37,6 +37,7 @@ class JoongAngCrawler:
         self.url = "https://www.joongang.co.kr/society/accident"
         self.driver.get(self.url)
 
+        self.action = ActionChains(self.driver)
         self.start_meta = start_meta
 
     def is_between(self, request: str, start: str, end: str) -> bool:
@@ -63,7 +64,6 @@ class JoongAngCrawler:
         while True:
             # page_num = 0
 
-            self.logger.info("Loading...")
             time.sleep(3)
             story_list = self.driver.find_element_by_css_selector("#story_list").find_elements_by_class_name("card_body")
             self.logger.info(f"Number of articles in current page: {len(story_list)}")
@@ -86,9 +86,9 @@ class JoongAngCrawler:
                         if idx == (len(story_list)-1):
                             expand_button = self.driver.find_element_by_css_selector("#container > section > div > div.col_lg9 > section > div > a")
                             # 버튼을 찾을 때까지 대기
-                            WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#container > section > div > div.col_lg9 > section > div > a")))
-                            action = ActionChains(self.driver)
-                            action.move_to_element(expand_button).perform()
+                            # WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#container > section > div > div.col_lg9 > section > div > a")))
+                            # action = ActionChains(self.driver)
+                            self.action.move_to_element(expand_button).perform()
                             # 더보기 버튼 클릭
                             expand_button.click()
 
@@ -100,9 +100,9 @@ class JoongAngCrawler:
 
                 expand_button = self.driver.find_element_by_css_selector("#container > section > div > div.col_lg9 > section > div > a")
                 # 버튼을 찾을 때까지 대기
-                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#container > section > div > div.col_lg9 > section > div > a")))
-                action = ActionChains(self.driver)
-                action.move_to_element(expand_button).perform()
+                #WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#container > section > div > div.col_lg9 > section > div > a")))
+                #action = ActionChains(self.driver)
+                self.action.move_to_element(expand_button).perform()
                 # 더보기 버튼 클릭
                 expand_button.click()
                 page_num+=1
@@ -118,16 +118,15 @@ class JoongAngCrawler:
 
         try:
             while cnt<10000:
-                self.logger.info("Loading...")
                 time.sleep(3)
-                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#story_list")))
+                #WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#story_list")))
                 story_list = self.driver.find_element_by_css_selector("#story_list").find_elements_by_class_name("card_body")
 
                 print(f"기사 수: {len(story_list)} 현재 기사번호: {idx}")
                 
                 self.driver.find_element_by_tag_name('body').send_keys(Keys.PAGE_DOWN)
                 time.sleep(2)
-                WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#story_list")))
+                #WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#story_list")))
                 date = story_list[idx].find_element_by_class_name("date").text
                 title = story_list[idx].find_element_by_class_name("headline").text
                 url = story_list[idx].find_element_by_css_selector("h2 > a").get_attribute("href")
@@ -162,9 +161,9 @@ class JoongAngCrawler:
                     self.driver.find_element_by_tag_name('body').send_keys(Keys.PAGE_DOWN)
                     expand_button = self.driver.find_element_by_css_selector("#container > section > div > div.col_lg9 > section > div > a")
                     # 버튼을 찾을 때까지 대기
-                    WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#container > section > div > div.col_lg9 > section > div > a")))
-                    action = ActionChains(self.driver)
-                    action.move_to_element(expand_button).perform()
+                    #WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR,"#container > section > div > div.col_lg9 > section > div > a")))
+                    #action = ActionChains(self.driver)
+                    self.action.move_to_element(expand_button).perform()
                     # 더보기 버튼 클릭
                     expand_button.click()
 
@@ -172,8 +171,9 @@ class JoongAngCrawler:
         except Exception as e:
             print(e)
             self.logger.warning("=======Crawler Stoped!=======")
-            if cnt!=0:
-                self.logger.warning(f"Last aticle date : {date}")
+            if cnt==0:
+                raise Exception("No article brought.")
+            self.logger.warning(f"Last aticle date : {date}")
             return date, df
         
 
@@ -182,21 +182,21 @@ if __name__=="__main__":
     # logger
     logger = logging.getLogger("log")
     logger.setLevel(logging.INFO)
-    file_handler= logging.FileHandler('./log/')
+    file_handler= logging.FileHandler('./joongang/log/')
 
     formatter = logging.Formatter('%(asctime)s|%(levelname)s: %(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     
-    crawler = JoongAngCrawler(logger,'2019.09.10 05:00')
-    end_date, df = crawler.crawling() # 다음 수행 시 오류난  end_date의 전 기사부터 시작
+    crawler = JoongAngCrawler(logger,'2021.08.31 05:00')
+    try:
+        end_date, df = crawler.crawling() # 다음 수행 시 오류난  end_date의 전 기사부터 시작
+    except Exception as e:
+        print(e)
 
-    save_dir = ('./data/joongang_accident_df.csv')
+    save_dir = ('./joongang/data/joongang_accident_df.csv')
 
     origin_df = pd.read_csv(save_dir)
     origin_df = origin_df.iloc[:-1]
     expand_df = pd.concat([origin_df, df], ignore_index=True)
     expand_df.to_csv(save_dir, index=False)
-
-    # df = pd.read_csv(save_dir)
-    # print(df)
